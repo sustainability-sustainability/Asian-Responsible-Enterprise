@@ -177,59 +177,53 @@ router.delete('/story/:id', validateObjectId, async (req, res) => {
 });
 
 // ========================================
-// BULK UPDATE NEWS (articles + videos + stories)
+// BULK UPDATE NEWS (safe upserts)
 // ========================================
 router.put('/all', async (req, res) => {
   let { articles = [], videos = [], stories = [] } = req.body;
   const errors = {};
 
-  // ✅ Sanitize _id fields before insert
-  articles = articles.map(a => {
-    if (!mongoose.isValidObjectId(a._id)) {
-      delete a._id;
-    }
-    return a;
-  });
-  videos = videos.map(v => {
-    if (!mongoose.isValidObjectId(v._id)) {
-      delete v._id;
-    }
-    return v;
-  });
-  stories = stories.map(s => {
-    if (!mongoose.isValidObjectId(s._id)) {
-      delete s._id;
-    }
-    return s;
-  });
+  // sanitize _id
+  articles = articles.map(a => mongoose.isValidObjectId(a._id) ? a : { ...a, _id: undefined });
+  videos = videos.map(v => mongoose.isValidObjectId(v._id) ? v : { ...v, _id: undefined });
+  stories = stories.map(s => mongoose.isValidObjectId(s._id) ? s : { ...s, _id: undefined });
 
-  // Articles
   try {
-    await Article.deleteMany({});
-    if (articles.length) await Article.insertMany(articles);
+    await Promise.all([
+      Article.bulkWrite(
+        articles.map(a => ({
+          updateOne: {
+            filter: { _id: a._id },
+            update: a,
+            upsert: true
+          }
+        }))
+      ),
+      FeaturedVideo.bulkWrite(
+        videos.map(v => ({
+          updateOne: {
+            filter: { _id: v._id },
+            update: v,
+            upsert: true
+          }
+        }))
+      ),
+      FeaturedStory.bulkWrite(
+        stories.map(s => ({
+          updateOne: {
+            filter: { _id: s._id },
+            update: s,
+            upsert: true
+          }
+        }))
+      )
+    ]);
   } catch (err) {
-    console.error('Article insert failed:', err.message);
-    errors.articles = err.message;
-  }
-
-  // Videos
-  try {
-    await FeaturedVideo.deleteMany({});
-    if (videos.length) await FeaturedVideo.insertMany(videos);
-  } catch (err) {
-    console.error('Video insert failed:', err.message);
-    errors.videos = err.message;
-  }
-
-  // Stories
-  try {
-    await FeaturedStory.deleteMany({});
-    if (stories.length) await FeaturedStory.insertMany(stories);
-  } catch (err) {
-    console.error('Story insert failed:', err.message);
-    errors.stories = err.message;
+    console.error('Bulk update failed:', err.message);
+    errors.bulk = err.message;
   }
 
   res.json({ message: 'News update attempted', errors });
 });
+
 module.exports = router;

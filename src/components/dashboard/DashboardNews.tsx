@@ -13,9 +13,9 @@ import { ConfirmDialog } from '../ui/confirm-dialog';
 import { api } from '../../utils/api';
 
 interface NewsArticle {
-  _id?: string; // MongoDB ObjectId
+  _id?: string;
   title: string;
-  description: string; // ✅ match backend
+  description: string;
   excerpt: string;
   image: string;
   date: string;
@@ -27,20 +27,19 @@ interface NewsArticle {
 }
 
 interface NewsVideo {
-  _id?: string;        // MongoDB ObjectId
+  _id?: string;
   title: string;
   description: string;
-  thumbnail: string;   // image thumbnail
+  thumbnail: string;
   duration: string;
   views: string;
   date: string;
-  videoUrl: string;    // required by backend schema
-  link?: string;       // optional external link
+  videoUrl: string;
+  link?: string;
 }
 
-
 interface FeaturedStory {
- _id?: string;
+  _id?: string;
   title: string;
   excerpt: string;
   date: string;
@@ -50,10 +49,9 @@ interface FeaturedStory {
   featured: boolean;
   image: string;
   useCustomImage: boolean;
-  link?: string; // Optional external link
+  link?: string;
 }
 
-// ✅ Start with empty arrays instead of hardcoded defaults
 const defaultArticles: NewsArticle[] = [];
 const defaultVideos: NewsVideo[] = [];
 const defaultStories: FeaturedStory[] = [];
@@ -66,8 +64,7 @@ export default function DashboardNews() {
   const [editingVideo, setEditingVideo] = useState<NewsVideo | null>(null);
   const [editingStory, setEditingStory] = useState<FeaturedStory | null>(null);
   const [loading, setLoading] = useState(false);
-  
-  // Confirmation dialog states
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -82,7 +79,6 @@ export default function DashboardNews() {
     variant: 'default'
   });
 
-  // Load data on component mount - sync with website
   useEffect(() => {
     loadArticles();
     loadVideos();
@@ -92,11 +88,7 @@ export default function DashboardNews() {
   const loadArticles = async () => {
     try {
       const data = await api.getNews();
-      if (data && data.articles && Array.isArray(data.articles) && data.articles.length > 0) {
-        setArticles(data.articles);
-      } else {
-        setArticles(defaultArticles);
-      }
+      setArticles(data?.articles?.length ? data.articles : defaultArticles);
     } catch (error) {
       console.error('Error loading articles:', error);
       toast.error('Failed to load news articles. Please try again.');
@@ -107,11 +99,7 @@ export default function DashboardNews() {
   const loadVideos = async () => {
     try {
       const data = await api.getNews();
-      if (data && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
-        setVideos(data.videos);
-      } else {
-        setVideos(defaultVideos);
-      }
+      setVideos(data?.videos?.length ? data.videos : defaultVideos);
     } catch (error) {
       console.error('Error loading videos:', error);
       toast.error('Failed to load videos. Please try again.');
@@ -122,11 +110,7 @@ export default function DashboardNews() {
   const loadFeaturedStories = async () => {
     try {
       const data = await api.getNews();
-      if (data && data.stories && Array.isArray(data.stories) && data.stories.length > 0) {
-        setFeaturedStories(data.stories);
-      } else {
-        setFeaturedStories(defaultStories);
-      }
+      setFeaturedStories(data?.stories?.length ? data.stories : defaultStories);
     } catch (error) {
       console.error('Error loading featured stories:', error);
       toast.error('Failed to load featured stories. Please try again.');
@@ -134,234 +118,193 @@ export default function DashboardNews() {
     }
   };
 
- 
- const saveArticles = async (updatedArticles: NewsArticle[]) => {
-  try {
-    const data = {
-      articles: updatedArticles,
-      videos: videos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-;
-    setArticles(updatedArticles);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save articles');
-  
-    setArticles(updatedArticles);
-  }
-};
-
-const saveVideos = async (updatedVideos: NewsVideo[]) => {
-  try {
-    const data = {
-      articles: articles,
-      videos: updatedVideos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
-    setVideos(updatedVideos);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save videos');
-
-    setVideos(updatedVideos);
-  }
-};
-
-const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
-  try {
-    const data = {
-      articles: articles,
-      videos: videos,
-      stories: updatedStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
-    setFeaturedStories(updatedStories);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save stories');
-
-    setFeaturedStories(updatedStories);
-  }
-};
-
-  // Article CRUD operations
- // ✅ Article CRUD operations
-// ✅ Article CRUD operations
-const handleSaveArticle = () => {
-  if (editingArticle) {
-    // Required fields aligned with NewsArticle interface
-    const requiredFields = [
-      { key: "title", label: "Title" },
-    
-      { key: "excerpt", label: "Excerpt" },
-      { key: "author", label: "Author" },
-      { key: "date", label: "Date" },
-      { key: "image", label: "Image" },
-      { key: "category", label: "Category" },
-    ];
-
-    const missing = requiredFields.filter(
-      f => !editingArticle[f.key as keyof NewsArticle]
-    );
-
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
+  const saveArticles = async (updatedArticles: NewsArticle[]) => {
+    try {
+      await api.updateAllNews({ articles: updatedArticles, videos, stories: featuredStories });
+      setArticles(updatedArticles);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save articles');
+      setArticles(updatedArticles);
     }
+  };
 
-    const isNew = !editingArticle._id; // ✅ use _id instead of id
-    setConfirmDialog({
-      open: true,
-      title: isNew ? "Create Article" : "Update Article",
-      description: isNew
-        ? "Are you sure you want to create this article? It will be immediately visible on the website."
-        : "Are you sure you want to save these changes? The article will be updated on the website.",
-      onConfirm: () => {
-        if (isNew) {
-          const { _id, ...data } = editingArticle; // strip accidental _id
-          const newArticle = { ...data };
-          saveArticles([...articles, newArticle]);
-          toast.success("Article created successfully!");
-        } else {
-          saveArticles(
-            articles.map(a =>
-              a._id === editingArticle._id ? editingArticle : a
-            )
-          );
-          toast.success("Article updated successfully!");
-        }
-        setEditingArticle(null);
-      },
-      variant: "default",
-    });
-  }
-};
+  const saveVideos = async (updatedVideos: NewsVideo[]) => {
+    try {
+      await api.updateAllNews({ articles, videos: updatedVideos, stories: featuredStories });
+      setVideos(updatedVideos);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save videos');
+      setVideos(updatedVideos);
+    }
+  };
 
-const handleDeleteArticle = (id: string) => { // ✅ use string for MongoDB ObjectId
+  const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
+    try {
+      await api.updateAllNews({ articles, videos, stories: updatedStories });
+      setFeaturedStories(updatedStories);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save stories');
+      setFeaturedStories(updatedStories);
+    }
+  };
+
+  // ✅ Article CRUD
+  const handleSaveArticle = () => {
+    if (editingArticle) {
+      const requiredFields = [
+        { key: "title", label: "Title" },
+        { key: "excerpt", label: "Excerpt" },
+        { key: "author", label: "Author" },
+        { key: "date", label: "Date" },
+        { key: "image", label: "Image" },
+        { key: "category", label: "Category" },
+      ];
+      const missing = requiredFields.filter(f => !editingArticle[f.key as keyof NewsArticle]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.map(f => f.label).join(", ")}`);
+        return;
+      }
+      const isNew = !editingArticle._id;
+      setConfirmDialog({
+        open: true,
+        title: isNew ? "Create Article" : "Update Article",
+        description: isNew
+          ? "Are you sure you want to create this article?"
+          : "Are you sure you want to save these changes?",
+        onConfirm: () => {
+          if (isNew) {
+            const { _id, ...data } = editingArticle;
+            saveArticles([...articles, data]);
+            toast.success("Article created successfully!");
+          } else {
+            saveArticles(articles.map(a => a._id === editingArticle._id ? editingArticle : a));
+            toast.success("Article updated successfully!");
+          }
+          setEditingArticle(null);
+        },
+        variant: "default",
+      });
+    }
+  };
+
+const handleDeleteArticle = (id: string) => {
   setConfirmDialog({
     open: true,
     title: "Delete Article",
     description: "Are you sure you want to delete this article?",
-    onConfirm: () => {
-      saveArticles(articles.filter(a => a._id !== id));
-      toast.success("Article deleted successfully!");
+    onConfirm: async () => {
+      try {
+        await api.deleteArticle(id); // ✅ call backend delete
+        setArticles(articles.filter(a => a._id !== id)); // update local state
+        toast.success("Article deleted successfully!");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to delete article");
+      }
     },
     variant: "destructive",
   });
 };
 
-// ✅ Video CRUD operations (still use id: number)
-const handleSaveVideo = () => {
-  if (editingVideo) {
-    const requiredFields = [
-      { key: "title", label: "Title" },
-      { key: "description", label: "Description" },
-      { key: "date", label: "Date" },
-      { key: "thumbnail", label: "Thumbnail" },
-    ];
 
-     const missing = requiredFields.filter(
-      f => !editingVideo[f.key as keyof FeaturedVideo]
-    );
+  // ✅ Video CRUD
+  const handleSaveVideo = () => {
+    if (editingVideo) {
+      const requiredFields = [
+        { key: "title", label: "Title" },
+        { key: "description", label: "Description" },
+        { key: "date", label: "Date" },
+        { key: "thumbnail", label: "Thumbnail" },
+      ];
+      const missing = requiredFields.filter(f => !editingVideo[f.key as keyof NewsVideo]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.map(f => f.label).join(", ")}`);
+        return;
+      }
+      const isNew = !editingVideo._id;
+      if (isNew) {
+        const { _id, ...data } = editingVideo;
+        saveVideos([...videos, data]);
+        toast.success("Video created successfully!");
+      } else {
+        saveVideos(videos.map(v => v._id === editingVideo._id ? editingVideo : v));
+        toast.success("Video updated successfully!");
+      }
+      setEditingVideo(null);
+    }
+  };
 
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
-    }
-    const isNew = !editingVideo._id; // ✅ use _id instead of id
-    if (isNew) {
-      const { _id, ...data } = editingVideo; // strip accidental _id
-      const newVideo = { ...data };
-      saveVideos([...videos, newVideo]);
-      toast.success("Video created successfully!");
-    } else {
-      saveVideos(
-        videos.map(v =>
-          v._id === editingVideo._id ? editingVideo : v
-        )
-      );
-      toast.success("Video updated successfully!");
-    }
-    setEditingVideo(null);
-  }
-};
-const handleDeleteVideo = (id: string) => { // ✅ string for MongoDB ObjectId
+ const handleDeleteVideo = (id: string) => {
   setConfirmDialog({
     open: true,
     title: "Delete Video",
     description: "Are you sure you want to delete this video?",
-    onConfirm: () => {
-      saveVideos(videos.filter(v => v._id !== id));
-      toast.success("Video deleted successfully!");
+    onConfirm: async () => {
+      try {
+        await api.deleteVideo(id); // ✅ call backend DELETE /news/video/:id
+        setVideos(videos.filter(v => v._id !== id)); // update local state
+        toast.success("Video deleted successfully!");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete video");
+      }
     },
     variant: "destructive",
   });
 };
 
-// ✅ Featured Story CRUD operations (still use id: number)
-const handleSaveStory = () => {
-  if (editingStory) {
-    const requiredFields = [
-      { key: "title", label: "Title" },
-      { key: "excerpt", label: "Excerpt" },
-      { key: "date", label: "Date" },
-      { key: "readTime", label: "Read Time" },
-      { key: "category", label: "Category" },
-      { key: "image", label: "Image" },
-      { key: "sdg", label: "SDG Number" },
-    ];
+  // ✅ Featured Story CRUD
+  const handleSaveStory = () => {
+    if (editingStory) {
+      const requiredFields = [
+        { key: "title", label: "Title" },
+        { key: "excerpt", label: "Excerpt" },
+        { key: "date", label: "Date" },
+        { key: "readTime", label: "Read Time" },
+        { key: "category", label: "Category" },
+        { key: "image", label: "Image" },
+        { key: "sdg", label: "SDG Number" },
+      ];
+         const missing = requiredFields.filter(f => !editingStory[f.key as keyof FeaturedStory]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.map(f => f.label).join(", ")}`);
+        return;
+      }
 
-    const missing = requiredFields.filter(
-      f => !editingStory[f.key as keyof FeaturedStory]
-    );
+      const isNew = !editingStory._id;
+      if (isNew) {
+        const { _id, ...data } = editingStory; // strip accidental _id
+        saveFeaturedStories([...featuredStories, data]);
+        toast.success("Featured story created successfully!");
+      } else {
+        saveFeaturedStories(
+          featuredStories.map(s => s._id === editingStory._id ? editingStory : s)
+        );
+        toast.success("Featured story updated successfully!");
+      }
 
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
+      setEditingStory(null);
     }
-
-    const isNew = !editingStory._id;
-    if (isNew) {
-      const { _id, ...data } = editingStory; // strip accidental _id
-      const newStory = { ...data };
-      saveFeaturedStories([...featuredStories, newStory]);
-      toast.success("Featured story created successfully!");
-    } else {
-      saveFeaturedStories(
-        featuredStories.map(s =>
-          s._id === editingStory._id ? editingStory : s
-        )
-      );
-      toast.success("Featured story updated successfully!");
-    }
-    
-
-    setEditingStory(null);
-  }
-};
+  };
 
 const handleDeleteStory = (id: string) => {
   setConfirmDialog({
     open: true,
     title: "Delete Featured Story",
     description: "Are you sure you want to delete this featured story?",
-    onConfirm: () => {
-      saveFeaturedStories(featuredStories.filter(s => s.id !== id));
-      toast.success("Featured story deleted successfully!");
+    onConfirm: async () => {
+      try {
+        await api.deleteStory(id); // ✅ call backend DELETE /news/story/:id
+        setFeaturedStories(featuredStories.filter(s => s._id !== id)); // update local state
+        toast.success("Featured story deleted successfully!");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete story");
+      }
     },
     variant: "destructive",
   });
 };
+
+
+
 
   return (
     <div className="space-y-6">
@@ -416,64 +359,64 @@ const handleDeleteStory = (id: string) => {
             </Button>
           </div>
 
-          <div className="grid gap-4">
-            {articles.map((article) => (
-              <Card key={article.id} className={article.featured ? "border-yellow-400 border-2" : ""}>
-                <CardContent className="p-6">
-                  <div className="flex gap-4">
-                    {article.image && (
-                      <img 
-                        src={article.image} 
-                        alt={article.title}
-                        className="w-32 h-24 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg">{article.title}</h3>
-                            {article.featured && (
-                              <Badge className="bg-yellow-500">Featured</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 mb-2 line-clamp-2">{article.description}</p>
-                          <div className="flex gap-4 text-xs text-gray-400">
-                            <span>{article.date}</span>
-                            <span>{article.category}</span>
-                            <span>{article.author}</span>
-                            <span>{article.readTime}</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingArticle(article)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-500 hover:bg-red-50"
-                            onClick={() => handleDeleteArticle(article.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <div className="grid gap-4">
+  {articles.map((article) => (
+    <Card key={article._id} className={article.featured ? "border-yellow-400 border-2" : ""}>
+      <CardContent className="p-6">
+        <div className="flex gap-4">
+          {article.image && (
+            <img 
+              src={article.image} 
+              alt={article.title}
+              className="w-32 h-24 object-cover rounded"
+            />
+          )}
+          <div className="flex-1">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg">{article.title}</h3>
+                  {article.featured && (
+                    <Badge className="bg-yellow-500">Featured</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mb-2 line-clamp-2">{article.description}</p>
+                <div className="flex gap-4 text-xs text-gray-400">
+                  <span>{article.date}</span>
+                  <span>{article.category}</span>
+                  <span>{article.author}</span>
+                  <span>{article.readTime}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 ml-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setEditingArticle(article)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-red-500 hover:bg-red-50"
+                  onClick={() => handleDeleteArticle(article._id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
           {editingArticle && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingArticle.id === 0 ? 'New Article' : 'Edit Article'}</CardTitle>
+                <CardTitle>{editingArticle._id === 0 ? 'New Article' : 'Edit Article'}</CardTitle>
                 <CardDescription>Create engaging in-depth articles for your readers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -646,7 +589,7 @@ const handleDeleteStory = (id: string) => {
 
           <div className="grid gap-4">
             {videos.map((video) => (
-              <Card key={video.id}>
+              <Card key={video._id}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {video.thumbnail && (
@@ -682,7 +625,7 @@ const handleDeleteStory = (id: string) => {
                             size="sm"
                             variant="outline"
                             className="text-red-500 hover:bg-red-50"
-                            onClick={() => handleDeleteVideo(video.id)}
+                            onClick={() => handleDeleteVideo(video._id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -698,7 +641,7 @@ const handleDeleteStory = (id: string) => {
           {editingVideo && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingVideo.id === 0 ? 'New Video' : 'Edit Video'}</CardTitle>
+               <CardTitle>{!editingVideo._id ? 'New Video' : 'Edit Video'}</CardTitle>
                 <CardDescription>Add featured videos to showcase your work</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -844,7 +787,7 @@ const handleDeleteStory = (id: string) => {
 
           <div className="grid gap-4">
             {featuredStories.map((story) => (
-              <Card key={story.id} className={story.featured ? "border-yellow-400 border-2" : ""}>
+              <Card key={story._id} className={story.featured ? "border-yellow-400 border-2" : ""}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -874,7 +817,7 @@ const handleDeleteStory = (id: string) => {
                         size="sm"
                         variant="outline"
                         className="text-red-500 hover:bg-red-50"
-                        onClick={() => handleDeleteStory(story.id)}
+                        onClick={() => handleDeleteStory(story._id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -888,7 +831,7 @@ const handleDeleteStory = (id: string) => {
           {editingStory && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingStory.id === 0 ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
+               <CardTitle>{!editingStory._id ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
                 <CardDescription>Hero stories with custom images</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
