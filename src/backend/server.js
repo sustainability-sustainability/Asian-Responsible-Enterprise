@@ -40,32 +40,41 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 // ========================================
 // CORS CONFIGURATION
 // ========================================
+// ========================================
+// CORS CONFIGURATION
+// ========================================
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : [
-      'http://localhost:3000', 'http://localhost:5173', 'https://asian-responsible-enterprise-awards.vercel.app', 'https://asian-responsible-enterprise-awards-sustainabilitys-projects.vercel.app'
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://asian-responsible-enterprise-awards.vercel.app'
     ];
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    // ✅ Allow production domain, localhost, and any Vercel preview subdomain
+    if (
+      allowedOrigins.includes(origin) ||
+      (origin && origin.endsWith('.vercel.app')) ||
+      process.env.NODE_ENV === 'development'
+    ) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // ✅ Explicitly allow methods
-  allowedHeaders: ['Content-Type', 'Authorization'],    // ✅ Explicitly allow headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-
-// Handle preflight requests globally
 app.options('*', cors(corsOptions));
+
 
 // ========================================
 // BODY PARSING MIDDLEWARE
