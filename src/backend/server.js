@@ -82,9 +82,6 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ message: 'Login successful' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 // ========================================
 // CLOUDINARY CONFIGURATION
