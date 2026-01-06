@@ -121,26 +121,29 @@ export default function DashboardPublications() {
   };
 
   const handleDelete = async (id: string) => {
-    setConfirmDialog({
-      open: true,
-      title: "Delete Publication",
-      description: "Are you sure you want to delete this publication?",
-      onConfirm: async () => {
-        try {
-          await api.deletePublication(id);
-          const updated = publications.filter((p) => p._id !== id);
-          savePublications(updated);
-          toast.success("Publication deleted successfully!");
-        } catch (error: any) {
-          console.error("Error deleting publication:", error);
-          const updated = publications.filter((p) => p._id !== id);
-          savePublications(updated);
-          toast.success("Publication deleted locally");
-        }
-      },
-      variant: "destructive",
-    });
-  };
+  setConfirmDialog({
+    open: true,
+    title: "Delete Publication",
+    description: "Are you sure you want to delete this publication?",
+    onConfirm: async () => {
+      try {
+        await api.deletePublication(id);
+        const updated = publications.filter((p) => p._id !== id);
+        savePublications(updated);
+        toast.success("Publication deleted successfully!");
+      } catch (error: any) {
+        console.error("Error deleting publication:", error);
+        const updated = publications.filter((p) => p._id !== id);
+        savePublications(updated);
+        toast.success("Publication deleted locally");
+      } finally {
+        // ✅ close the dialog after confirm
+        setConfirmDialog((prev) => ({ ...prev, open: false }));
+      }
+    },
+    variant: "destructive",
+  });
+};
 
   // TOC helpers remain the same...
   const addTocItem = () => {
