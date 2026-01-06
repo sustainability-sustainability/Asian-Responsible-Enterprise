@@ -42,23 +42,30 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 // ========================================
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : [
+      'http://localhost:3000', 'http://localhost:5173', 'https://asian-responsible-enterprise-awards.vercel.app', 'https://asian-responsible-enterprise-awards-sustainabilitys-projects.vercel.app'
+    ];
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`Not allowed by CORS: ${origin}`));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // ✅ Explicitly allow methods
+  allowedHeaders: ['Content-Type', 'Authorization'],    // ✅ Explicitly allow headers
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests globally
+app.options('*', cors(corsOptions));
 
 // ========================================
 // BODY PARSING MIDDLEWARE
@@ -66,6 +73,18 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(sanitizeRequest);
+
+// ========================================
+// SAMPLE ROUTE
+// ========================================
+app.post('/api/auth/login', (req, res) => {
+  // your login logic here
+  res.json({ message: 'Login successful' });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 // ========================================
 // CLOUDINARY CONFIGURATION
