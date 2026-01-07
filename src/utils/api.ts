@@ -235,6 +235,8 @@ deleteStory: (id: string) => apiCall(`/news/story/${id}`, {
   // ========================================
   
   getEvents: () => apiCall('/events'),
+
+  getEvent: (id: string) => apiCall(`/events/${id}`),
   
   createEvent: (data: any) => apiCall('/events', {
     method: 'POST',

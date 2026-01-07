@@ -38,6 +38,7 @@ export default function DashboardEvents() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoCaption, setPhotoCaption] = useState("");
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -58,6 +59,7 @@ export default function DashboardEvents() {
   }, []);
 
   const loadEvents = async () => {
+    setLoading(true);
     try {
       const data = await api.getEvents();
       if (data && Array.isArray(data)) {
@@ -80,6 +82,8 @@ export default function DashboardEvents() {
       } else {
         setEvents([]);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,7 +197,7 @@ export default function DashboardEvents() {
 
   const removePhoto = (photoId: string) => {
     if (editingEvent) {
-      const updatedPhotos = editingEvent.photos.filter((p) => p._id !== photoId);
+      const updatedPhotos = editingEvent.photos.filter((p) => (p._id || p.url) !== photoId);
       setEditingEvent({
         ...editingEvent,
         photos: updatedPhotos,
@@ -202,9 +206,9 @@ export default function DashboardEvents() {
   };
 
   const editPhoto = (photoId: string) => {
-    const photo = editingEvent?.photos.find((p) => p._id === photoId);
+    const photo = editingEvent?.photos.find((p) => (p._id || p.url) === photoId);
     if (photo) {
-      setEditingPhotoId(photoId);
+      setEditingPhotoId(photo._id || photo.url);
       setPhotoUrl(photo.url);
       setPhotoCaption(photo.caption);
     }
@@ -213,7 +217,7 @@ export default function DashboardEvents() {
   const updatePhoto = () => {
     if (editingEvent && editingPhotoId !== null) {
       const updatedPhotos = editingEvent.photos.map((p) =>
-        p._id === editingPhotoId
+        (p._id || p.url) === editingPhotoId
           ? { ...p, url: photoUrl, caption: photoCaption }
           : p
       );
@@ -244,7 +248,6 @@ export default function DashboardEvents() {
         <Button
           onClick={() => {
             setEditingEvent({
-              id: "0",
               month: "January",
               year: new Date().getFullYear(),
               title: "",
@@ -269,8 +272,20 @@ export default function DashboardEvents() {
       </div>
 
       <div className="grid gap-4">
-        {events.map((event) => (
-          <Card key={event.id}>
+        {loading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-500">Loading events...</span>
+          </div>
+        ) : events.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center text-gray-500">
+              No events found. Click "Add Event" to create your first event.
+            </CardContent>
+          </Card>
+        ) : (
+          events.map((event) => (
+          <Card key={event._id || event.id}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
@@ -306,7 +321,7 @@ export default function DashboardEvents() {
                     size="sm"
                     variant="outline"
                     className="text-red-500 hover:bg-red-50"
-                    onClick={() => handleDelete(event.id)}
+                    onClick={() => handleDelete(event._id || event.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -316,31 +331,27 @@ export default function DashboardEvents() {
               {/* Photo preview */}
               {event.photos.length > 0 && (
                 <div className="grid grid-cols-6 gap-2">
-                  {event.photos.slice(0, 6).map((photo) => (
+                  {event.photos.map((photo) => (
                     <img
-                      key={photo.id}
+                      key={photo._id || photo.url}
                       src={photo.url}
                       alt={photo.caption}
                       className="w-full h-16 object-cover rounded"
                     />
                   ))}
-                  {event.photos.length > 6 && (
-                    <div className="w-full h-16 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
-                      +{event.photos.length - 6}
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-        ))}
+        ))
+        )}
       </div>
 
       {editingEvent && (
         <Card className="border-2 border-blue-500">
           <CardHeader>
             <CardTitle>
-              {(!editingEvent.id || editingEvent.id === "0" || editingEvent.id === 0 as any) ? "New Event" : "Edit Event"}
+              {!editingEvent._id ? "New Event" : "Edit Event"}
             </CardTitle>
             <CardDescription>Add or update event information and photos</CardDescription>
           </CardHeader>
@@ -485,8 +496,8 @@ export default function DashboardEvents() {
               {editingEvent.photos.length > 0 && (
                 <div className="space-y-2">
                   {editingEvent.photos.map((photo) => (
-                    <Card key={photo.id} className={`p-3 ${editingPhotoId === photo.id ? 'border-2 border-blue-500' : ''}`}>
-                      {editingPhotoId === photo.id ? (
+                    <Card key={photo._id || photo.url} className={`p-3 ${editingPhotoId === (photo._id || photo.url) ? 'border-2 border-blue-500' : ''}`}>
+                      {editingPhotoId === (photo._id || photo.url) ? (
                         <div className="space-y-3">
                           <div className="space-y-2">
                             <Label className="text-sm">Photo</Label>
@@ -579,14 +590,14 @@ export default function DashboardEvents() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => editPhoto(photo.id)}
+                              onClick={() => editPhoto(photo._id || photo.url)}
                             >
                               <Edit className="h-4 w-4 text-blue-500" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => removePhoto(photo.id)}
+                              onClick={() => removePhoto(photo._id || photo.url)}
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
