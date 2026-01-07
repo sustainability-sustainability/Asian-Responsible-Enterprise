@@ -134,14 +134,7 @@ export const api = {
   // ========================================
   // HOME SECTION
   // ========================================
-  
-  getHome: () => apiCall('/home'),
-  
-  updateHome: (data: any) => apiCall('/home', {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  }),
-
+ 
   
 
     getStats: () => apiCall('/awards/stats'),
