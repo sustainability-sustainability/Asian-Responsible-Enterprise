@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import emailjs from "emailjs-com";
 import {
   Mail,
   Phone,
@@ -232,14 +233,26 @@ const defaultLocation: Location = {
   googleMapsLink: "https://www.google.com/maps/search/?api=1&query=6789+Ayala+Avenue+Salcedo+Village+Makati+City+Metro+Manila",
 };
 
+
 export default function Contact() {
-  // Load contact data from API
+  // Contact data state
   const [contactInfo, setContactInfo] = useState(defaultContactInfo);
   const [offices, setOffices] = useState(officeLocations);
   const [displayFaqs, setDisplayFaqs] = useState(faqs);
   const [quickLinks, setQuickLinks] = useState(defaultQuickLinks);
   const [location, setLocation] = useState(defaultLocation);
-  
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    organization: "",
+    subject: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
   useEffect(() => {
     loadContactData();
   }, []);
@@ -249,53 +262,50 @@ export default function Contact() {
       const data = await api.getContact();
       if (data) {
         if (data.contactInfo && Array.isArray(data.contactInfo)) {
-          // Restore icon JSX elements
-          const contactInfoWithIcons = data.contactInfo.map((info: any, index: number) => ({
-            ...info,
-            icon: defaultContactInfo[index]?.icon || <Mail className="w-6 h-6" />
-          }));
+          const contactInfoWithIcons = data.contactInfo.map(
+            (info: any, index: number) => ({
+              ...info,
+              icon: defaultContactInfo[index]?.icon || (
+                <Mail className="w-6 h-6" />
+              ),
+            })
+          );
           setContactInfo(contactInfoWithIcons);
         }
-        if (data.offices && Array.isArray(data.offices)) {
-          setOffices(data.offices);
-        }
-        if (data.faqs && Array.isArray(data.faqs) && data.faqs.length > 0) {
-          setDisplayFaqs(data.faqs);
-        }
-        if (data.quickLinks && Array.isArray(data.quickLinks)) {
-          setQuickLinks(data.quickLinks);
-        }
-        if (data.location) {
-          setLocation(data.location);
-        }
+        if (data.offices) setOffices(data.offices);
+        if (data.faqs?.length) setDisplayFaqs(data.faqs);
+        if (data.quickLinks) setQuickLinks(data.quickLinks);
+        if (data.location) setLocation(data.location);
       }
     } catch (error) {
-      console.error('Error loading contact data from API:', error);
-      // Use defaults on error
+      console.error("Error loading contact data from API:", error);
     }
   };
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    organization: "",
-
-    subject: "",
-    message: "",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Example using EmailJS
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          name: formData.name,
+          email: formData.email,
+          organization: formData.organization,
+          subject: formData.subject,
+          message: formData.message,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Email failed:", error);
+    }
 
     setIsSubmitting(false);
-    setIsSubmitted(true);
 
     // Reset form after 3 seconds
     setTimeout(() => {
@@ -304,7 +314,6 @@ export default function Contact() {
         name: "",
         email: "",
         organization: "",
-
         subject: "",
         message: "",
       });
@@ -314,13 +323,14 @@ export default function Contact() {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
+
 
   return (
     <div className="min-h-screen py-20">
