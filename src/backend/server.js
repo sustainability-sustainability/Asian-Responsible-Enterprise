@@ -46,9 +46,7 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://asian-responsible-enterprise-awards.vercel.app'
+      'http://localhost:3000', 'http://localhost:5173', 'https://asian-responsible-enterprise-awards.vercel.app', 'https://asian-responsible-enterprise.vercel.app'
     ];
 
 const corsOptions = {
