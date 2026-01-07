@@ -670,9 +670,7 @@ export default function Community() {
                   </div>
                 </div>
 
-                <Button className={`w-full bg-gradient-to-r ${colors.accentGradient} text-white`}>
-                  Register Now
-                </Button>
+              
               </motion.div>
             ))}
           </div>
