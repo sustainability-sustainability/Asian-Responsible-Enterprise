@@ -41,23 +41,9 @@ export default function Home({ onNavigate }: HomeProps) {
   }, []);
 
   const loadHomeData = async () => {
-    try {
-      const data = await api.getHome();
-      if (data) {
-        setHomeData({ 
-          ...defaultHomeData, 
-          heroTitle: data.heroTitle || defaultHomeData.heroTitle,
-          heroSubtitle: data.heroSubtitle || defaultHomeData.heroSubtitle,
-          statsCovered: data.statsCovered || defaultHomeData.statsCovered,
-          statsPartners: data.statsPartners || defaultHomeData.statsPartners,
-          statsInitiatives: data.statsInitiatives || defaultHomeData.statsInitiatives,
-        });
-      }
-    } catch (error) {
-      console.error('Error loading home data from API:', error);
-      // Use defaults on error
-    }
-  };
+  // No API call anymore
+  setHomeData(defaultHomeData);
+};
 
   const scrollToSDGs = () => {
     sdgSectionRef.current?.scrollIntoView({ 
