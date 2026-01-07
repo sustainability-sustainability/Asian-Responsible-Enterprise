@@ -4,46 +4,52 @@ const mongoose = require('mongoose');
 // Article Schema
 // ========================================
 const articleSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
-  excerpt: { type: String,  },
-  description: { type: String, required: true }, // ✅ matches frontend
-  author: { type: String,  },
-  date: { type: Date, required: true }, // better as Date for sorting/filtering
-  image: { type: String,  },
-  category: { type: String, required: true },
-  tags: [String],
-  sdg: { type: Number, min: 1, max: 17 },
-  link: { type: String }   // ✅ optional external link
+  title: { type: String, required: true, trim: true, index: true },   // ✅ indexed for faster search
+  excerpt: { type: String },
+  description: { type: String, required: true },
+  author: { type: String, trim: true },
+  date: { type: Date, required: true, index: true },                  // ✅ indexed for sorting/filtering
+  image: { type: String },
+  category: { type: String, required: true, index: true },
+  tags: [{ type: String, index: true }],                              // ✅ indexed for tag-based queries
+  sdg: { type: Number, min: 1, max: 17, index: true },
+  link: { type: String }
 }, { timestamps: true });
+
+// Compound index for common queries (category + date)
+articleSchema.index({ category: 1, date: -1 });
 
 // ========================================
 // Featured Video Schema
 // ========================================
 const featuredVideoSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
+  title: { type: String, required: true, trim: true, index: true },
   description: { type: String, required: true },
-  videoUrl: { type: String, required: false },
+  videoUrl: { type: String },
   thumbnail: { type: String, required: true },
-  duration: { type: String },
-  category: { type: String },
-  link: { type: String }   // ✅ optional external link
+  duration: { type: Number },                                         // ✅ changed from String to Number
+  category: { type: String, index: true },
+  link: { type: String }
 }, { timestamps: true });
 
 // ========================================
 // Featured Story Schema
 // ========================================
 const featuredStorySchema = new mongoose.Schema({
-  title: { type: String, },
-  excerpt: { type: String, },
-  date: { type: Date,  },
-  readTime: { type: String, },
-  category: { type: String, },
-  sdg: { type: Number, min: 1, max: 17 },
-  featured: { type: Boolean, default: false },
+  title: { type: String, trim: true, index: true },
+  excerpt: { type: String },
+  date: { type: Date, index: true },
+  readTime: { type: String },
+  category: { type: String, index: true },
+  sdg: { type: Number, min: 1, max: 17, index: true },
+  featured: { type: Boolean, default: false, index: true },
   image: { type: String },
   useCustomImage: { type: Boolean, default: false },
-  link: { type: String }   // ✅ optional external link
+  link: { type: String }
 }, { timestamps: true });
+
+// Compound index for featured stories (featured + date)
+featuredStorySchema.index({ featured: 1, date: -1 });
 
 // ========================================
 // Models

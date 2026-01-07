@@ -4,7 +4,8 @@ const publicationSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    index: true              // ✅ faster search by title
   },
   description: {
     type: String,
@@ -15,24 +16,23 @@ const publicationSchema = new mongoose.Schema({
     required: true
   },
   pdfFile: {
-    type: String,
-    required: false
+    type: String
   },
   readOnlineUrl: {
-    type: String,
-    required: false
+    type: String
   },
   downloadUrl: {
-    type: String,
-    required: false
+    type: String
   },
   year: {
-    type: String,
-    required: true
+    type: Number,            // ✅ changed from String to Number for proper sorting/filtering
+    required: true,
+    index: true
   },
   category: {
     type: String,
-    required: true
+    required: true,
+    index: true              // ✅ faster category queries
   },
   pages: {
     type: Number,
@@ -48,14 +48,19 @@ const publicationSchema = new mongoose.Schema({
   },
   order: {
     type: Number,
-    default: 0
+    default: 0,
+    index: true              // ✅ useful for custom ordering
   }
 }, {
   timestamps: true
 });
 
-// Index for faster queries
-publicationSchema.index({ year: -1, order: 1 });
+// ✅ Compound indexes
+publicationSchema.index({ year: -1, order: 1 }); // sort by year descending, then order ascending
+publicationSchema.index({ category: 1, year: -1 }); // common query: publications per category by year
+
+// ✅ Prevent duplicate entries for same title + year
+publicationSchema.index({ title: 1, year: 1 }, { unique: true });
 
 const Publication = mongoose.model('Publication', publicationSchema);
 

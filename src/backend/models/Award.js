@@ -14,11 +14,13 @@ const awardSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    enum: ['Community', 'Environment', 'Innovation', 'Leadership'] // ✅ optional: restrict to known categories
   },
   year: {
-    type: String,
-    required: true
+    type: Number,              // ✅ changed from String to Number for better sorting/filtering
+    required: true,
+    index: true
   },
   description: {
     type: String,
@@ -27,7 +29,8 @@ const awardSchema = new mongoose.Schema({
   sdg: {
     type: Number,
     min: 1,
-    max: 17
+    max: 17,
+    index: true                // ✅ index for faster SDG-based queries
   },
   color: {
     type: String,
@@ -45,8 +48,14 @@ const awardSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
-awardSchema.index({ year: -1, order: 1 });
+// ✅ Indexes
+awardSchema.index({ year: -1, order: 1 }); // sort by year descending, then order ascending
+awardSchema.index({ category: 1 });        // faster category queries
+awardSchema.index({ sdg: 1 });             // faster SDG queries
+awardSchema.index(
+  { title: 1, organization: 1, year: 1 }, 
+  { unique: true }                         // prevent duplicate awards for same title/org/year
+);
 
 const Award = mongoose.model('Award', awardSchema);
 
