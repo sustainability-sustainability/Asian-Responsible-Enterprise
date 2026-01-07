@@ -222,7 +222,7 @@ mongoose.connect(MONGODB_URI, {
 // ========================================
 // IMPORT ROUTES
 // ========================================
-const homeRoutes = require('./routes/home');
+
 const newsRoutes = require('./routes/news');
 const eventsRoutes = require('./routes/events');
 const publicationsRoutes = require('./routes/publications');
@@ -238,7 +238,7 @@ const authRoutes = require('./routes/auth');
 // ========================================
 // API ROUTES
 // ========================================
-app.use('/api/home', homeRoutes);
+
 app.use('/api/news', newsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/publications', publicationsRoutes);
