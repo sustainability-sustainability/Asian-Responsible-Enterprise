@@ -8,8 +8,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Badge } from "./ui/badge";
-import climateNeutralAward from 'figma:asset/8d86444612d842f0a62ae183b8e3ede8a1f353dc.png';
-import climateNeutralHeroes from 'figma:asset/978e9bf39355758944f80e53089e3561bd792628.png';
+
 import { normalizeFromApi, migrateDocuments } from "../utils/objectId";
 import { api } from "../utils/api";
 
@@ -222,7 +221,7 @@ const colorPalette = [
     </h2>
 
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-  {featuredAwards.slice(0, 2).map((award, index) => {
+  {featuredAwards.map((award, index) => {
     const gradient = colorPalette[index % colorPalette.length];
     return (
       <motion.div

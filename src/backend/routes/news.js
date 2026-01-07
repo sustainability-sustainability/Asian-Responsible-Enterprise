@@ -44,7 +44,8 @@ router.get('/article/:id', validateObjectId, async (req, res) => {
 
 router.post('/article', async (req, res) => {
   try {
-    const newArticle = new Article(req.body);
+    const { _id, ...payload } = req.body; // ignore client _id
+    const newArticle = new Article(payload);
     const saved = await newArticle.save();
     res.status(201).json({ message: 'Article added successfully', data: saved });
   } catch (error) {
@@ -96,7 +97,8 @@ router.get('/video/:id', validateObjectId, async (req, res) => {
 
 router.post('/video', async (req, res) => {
   try {
-    const newVideo = new FeaturedVideo(req.body);
+    const { _id, ...payload } = req.body; // ignore client _id
+    const newVideo = new FeaturedVideo(payload);
     const saved = await newVideo.save();
     res.status(201).json({ message: 'Video added successfully', data: saved });
   } catch (error) {
@@ -148,7 +150,8 @@ router.get('/story/:id', validateObjectId, async (req, res) => {
 
 router.post('/story', async (req, res) => {
   try {
-    const newStory = new FeaturedStory(req.body);
+    const { _id, ...payload } = req.body; // ignore client _id
+    const newStory = new FeaturedStory(payload);
     const saved = await newStory.save();
     res.status(201).json({ message: 'Story added successfully', data: saved });
   } catch (error) {
@@ -183,40 +186,50 @@ router.put('/all', async (req, res) => {
   let { articles = [], videos = [], stories = [] } = req.body;
   const errors = {};
 
-  // sanitize _id
-  articles = articles.map(a => mongoose.isValidObjectId(a._id) ? a : { ...a, _id: undefined });
-  videos = videos.map(v => mongoose.isValidObjectId(v._id) ? v : { ...v, _id: undefined });
-  stories = stories.map(s => mongoose.isValidObjectId(s._id) ? s : { ...s, _id: undefined });
-
   try {
-    await Promise.all([
-      Article.bulkWrite(
-        articles.map(a => ({
+    // Split into new vs existing
+    const newArticles = articles.filter(a => !mongoose.isValidObjectId(a._id));
+    const existingArticles = articles.filter(a => mongoose.isValidObjectId(a._id));
+
+    const newVideos = videos.filter(v => !mongoose.isValidObjectId(v._id));
+    const existingVideos = videos.filter(v => mongoose.isValidObjectId(v._id));
+
+    const newStories = stories.filter(s => !mongoose.isValidObjectId(s._id));
+    const existingStories = stories.filter(s => mongoose.isValidObjectId(s._id));
+
+       await Promise.all([
+      // Insert new
+      newArticles.length ? Article.insertMany(newArticles) : Promise.resolve(),
+      newVideos.length ? FeaturedVideo.insertMany(newVideos) : Promise.resolve(),
+      newStories.length ? FeaturedStory.insertMany(newStories) : Promise.resolve(),
+
+      // Update existing
+      existingArticles.length ? Article.bulkWrite(
+        existingArticles.map(a => ({
           updateOne: {
             filter: { _id: a._id },
-            update: a,
-            upsert: true
+            update: { $set: a }
           }
         }))
-      ),
-      FeaturedVideo.bulkWrite(
-        videos.map(v => ({
+      ) : Promise.resolve(),
+
+      existingVideos.length ? FeaturedVideo.bulkWrite(
+        existingVideos.map(v => ({
           updateOne: {
             filter: { _id: v._id },
-            update: v,
-            upsert: true
+            update: { $set: v }
           }
         }))
-      ),
-      FeaturedStory.bulkWrite(
-        stories.map(s => ({
+      ) : Promise.resolve(),
+
+      existingStories.length ? FeaturedStory.bulkWrite(
+        existingStories.map(s => ({
           updateOne: {
             filter: { _id: s._id },
-            update: s,
-            upsert: true
+            update: { $set: s }
           }
         }))
-      )
+      ) : Promise.resolve()
     ]);
   } catch (err) {
     console.error('Bulk update failed:', err.message);
