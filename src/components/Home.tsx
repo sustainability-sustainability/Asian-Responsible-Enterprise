@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import SDGGrid from "./SDGGrid";
 import { Button } from "./ui/button";
-import { api } from "../utils/api";
+
 
 interface HomeProps {
   onNavigate?: (tab: string) => void;
