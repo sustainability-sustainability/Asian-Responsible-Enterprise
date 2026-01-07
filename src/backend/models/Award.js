@@ -15,7 +15,7 @@ const awardSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    enum: ['Community', 'Environment', 'Innovation', 'Leadership'] // ✅ optional: restrict to known categories
+
   },
   year: {
     type: Number,              // ✅ changed from String to Number for better sorting/filtering
